@@ -38,10 +38,10 @@ function durationFor(phase){
   return 1;
 }
 function coachPhrase(phase){
-  if(phase === 'lift') return 'Lift smoothly. Stay strong.';
-  if(phase === 'hold') return 'Hold it. Keep the tension.';
-  if(phase === 'lower') return 'Lower slowly. Stay in control.';
-  if(phase === 'rest') return 'Rest. Breathe and relax your arms.';
+  if(phase === 'lift') return 'Lift.';
+  if(phase === 'hold') return 'Hold.';
+  if(phase === 'lower') return 'Lower.';
+  if(phase === 'rest') return 'Well done. Rest. Breathe and relax your arms.';
   return phase;
 }
 function setPhase(phase,label,className){
