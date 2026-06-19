@@ -13,7 +13,8 @@ const CIRC = 2 * Math.PI * 52;
 let preferredVoice = null;
 let state = {
   screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'',
-  remaining:0, duration:1, running:false, elapsed:0, voice:true, interval:null
+  remaining:0, duration:1, running:false, elapsed:0, voice:true, interval:null,
+  phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null, elapsedBeforeStart:0
 };
 
 function save(){
@@ -23,11 +24,11 @@ function save(){
 function load(){
   try{
     const stored = JSON.parse(localStorage.getItem('trainingCoachState') || 'null');
-    if(stored && stored.screen !== 'done') state = { ...state, ...stored, running:false, interval:null };
+    if(stored && stored.screen !== 'done') state = { ...state, ...stored, running:false, interval:null, phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null };
   }catch(e){}
 }
 function current(){ return exercises[state.ex]; }
-function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0'); }
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(Math.floor(s%60)).padStart(2,'0'); }
 function durationFor(phase){
   const e = current();
   if(phase === 'lift') return e.lift;
@@ -49,6 +50,9 @@ function setPhase(phase,label,className){
   state.className = className;
   state.duration = Math.max(1, durationFor(phase));
   state.remaining = state.duration;
+  const now = Date.now();
+  state.phaseStartedAt = now;
+  state.phaseEndsAt = now + state.duration * 1000;
   vibrate(phase === 'rest' ? 80 : 35);
   speak(coachPhrase(phase));
 }
@@ -62,6 +66,8 @@ function resetExerciseProgress(index){
   state.className = '';
   state.remaining = 0;
   state.duration = 1;
+  state.phaseStartedAt = null;
+  state.phaseEndsAt = null;
 }
 function goToExercise(index){
   stopTimer(false);
@@ -121,7 +127,14 @@ function renderPlan(){
     $('planPreview').appendChild(item);
   });
 }
+function updateTimeFromClock(){
+  if(!state.running) return;
+  const now = Date.now();
+  if(state.workoutStartedAt) state.elapsed = state.elapsedBeforeStart + (now - state.workoutStartedAt) / 1000;
+  if(state.phaseEndsAt) state.remaining = Math.max(0, Math.ceil((state.phaseEndsAt - now) / 1000));
+}
 function render(){
+  updateTimeFromClock();
   const e = current();
   $('overallLabel').textContent = `Exercise ${state.ex + 1} of ${exercises.length}`;
   $('exerciseName').textContent = e.name;
@@ -130,7 +143,7 @@ function render(){
   $('elapsed').textContent = fmt(state.elapsed);
   $('phase').textContent = state.phase === 'ready' ? 'Ready' : state.label;
   $('phase').className = 'phase ' + state.className;
-  $('seconds').textContent = state.phase === 'ready' ? durationFor('lift') : state.remaining;
+  $('seconds').textContent = state.phase === 'ready' ? durationFor('lift') : Math.max(1, state.remaining);
   $('setCount').textContent = `${state.set} / ${e.sets}`;
   $('repCount').textContent = `${state.rep} / ${e.reps}`;
   $('load').textContent = e.load;
@@ -140,7 +153,11 @@ function render(){
   $('playPause').textContent = state.running ? 'Pause' : 'Start';
   $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Finish workout' : 'Next exercise';
   $('toggleVoice').textContent = `Voice prompts: ${state.voice ? 'on' : 'off'}`;
-  const progress = state.duration ? Math.max(0, Math.min(1, 1 - state.remaining / state.duration)) : 0;
+  const now = Date.now();
+  let progress = 0;
+  if(state.phaseStartedAt && state.phaseEndsAt && state.duration){
+    progress = Math.max(0, Math.min(1, (now - state.phaseStartedAt) / (state.duration * 1000)));
+  }
   $('ringProgress').style.strokeDasharray = CIRC;
   $('ringProgress').style.strokeDashoffset = CIRC * (1 - progress);
   $('ringProgress').style.stroke = state.className === 'lift' ? '#22c55e' : state.className === 'hold' ? '#f59e0b' : state.className === 'rest' ? '#ef4444' : '#38bdf8';
@@ -171,9 +188,10 @@ function advance(){
   if(state.phase === 'rest') firstPhase();
 }
 function tick(){
-  state.elapsed++;
-  state.remaining--;
-  if(state.remaining <= 0) advance();
+  updateTimeFromClock();
+  if(state.running && state.phaseEndsAt && Date.now() >= state.phaseEndsAt){
+    advance();
+  }
   render();
 }
 function startTimer(){
@@ -181,20 +199,31 @@ function startTimer(){
   if(state.phase === 'ready'){
     speak(`${current().name}. Set ${state.set}, rep ${state.rep}. Let's go.`);
     firstPhase();
+  } else if(state.remaining > 0) {
+    const now = Date.now();
+    state.phaseStartedAt = now - (state.duration - state.remaining) * 1000;
+    state.phaseEndsAt = now + state.remaining * 1000;
   }
   state.running = true;
-  state.interval = setInterval(tick, 1000);
+  state.workoutStartedAt = Date.now();
+  state.elapsedBeforeStart = state.elapsed || 0;
+  state.interval = setInterval(tick, 100);
   render();
 }
 function stopTimer(renderAfter=true){
+  updateTimeFromClock();
   state.running = false;
   if(state.interval){ clearInterval(state.interval); state.interval = null; }
+  state.elapsedBeforeStart = state.elapsed || 0;
+  state.workoutStartedAt = null;
+  state.phaseStartedAt = null;
+  state.phaseEndsAt = null;
   if(renderAfter) render();
 }
 function toggleTimer(){ state.running ? stopTimer() : startTimer(); }
 function reset(all=true){
   stopTimer(false);
-  state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null };
+  state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null, phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null, elapsedBeforeStart:0 };
   if(all) localStorage.removeItem('trainingCoachState');
   show('setup');
   render();
