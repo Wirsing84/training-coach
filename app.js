@@ -1,11 +1,11 @@
 const exercises = [
-  { name:'Classic Biceps Curls', image:'images/classic-biceps-curl.svg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:1, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
-  { name:'Hammer Curls', image:'images/hammer-curl.svg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:1, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
-  { name:'Concentration Curl Left', image:'images/concentration-curl-left.svg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Elbow against the inside of your thigh. Move slowly and with control.' },
-  { name:'Concentration Curl Right', image:'images/concentration-curl-right.svg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Same clean form as the left side. No jerking from the shoulder.' },
-  { name:'21s Curls Lower Half', image:'images/twenty-ones-lower-half.svg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Lower half only. Stay controlled. Do not swing.' },
-  { name:'21s Curls Upper Half', image:'images/twenty-ones-upper-half.svg', load:'2 × 5 kg', sets:2, reps:7, start:90, end:40, lift:2, hold:0, lower:3, rest:0, note:'Upper half only. Do not let your elbows drift forward.' },
-  { name:'21s Curls Full Range', image:'images/twenty-ones-full-range.svg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:40, lift:2, hold:0, lower:3, rest:30, note:'Full range of motion. Lower slowly and finish clean.' }
+  { name:'Classic Biceps Curls', image:'images/classic-biceps-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:1, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
+  { name:'Hammer Curls', image:'images/hammer-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:1, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
+  { name:'Concentration Curl Left', image:'images/concentration-curl-left.jpg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Elbow against the inside of your thigh. Move slowly and with control.' },
+  { name:'Concentration Curl Right', image:'images/concentration-curl-right.jpg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Same clean form as the left side. No jerking from the shoulder.' },
+  { name:'21s Curls Lower Half', image:'images/twenty-ones-lower-half.jpg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Lower half only. Stay controlled. Do not swing.' },
+  { name:'21s Curls Upper Half', image:'images/twenty-ones-upper-half.jpg', load:'2 × 5 kg', sets:2, reps:7, start:90, end:40, lift:2, hold:0, lower:3, rest:0, note:'Upper half only. Do not let your elbows drift forward.' },
+  { name:'21s Curls Full Range', image:'images/twenty-ones-full-range.jpg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:40, lift:2, hold:0, lower:3, rest:30, note:'Full range of motion. Lower slowly and finish clean.' }
 ];
 
 const $ = id => document.getElementById(id);
