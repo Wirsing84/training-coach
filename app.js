@@ -10,6 +10,7 @@ const exercises = [
 
 const $ = id => document.getElementById(id);
 const CIRC = 2 * Math.PI * 52;
+let preferredVoice = null;
 let state = {
   screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Bereit', className:'',
   remaining:0, duration:1, running:false, elapsed:0, voice:true, interval:null
@@ -35,6 +36,13 @@ function durationFor(phase){
   if(phase === 'rest') return e.rest || 20;
   return 1;
 }
+function coachPhrase(phase){
+  if(phase === 'lift') return 'Sauber hochziehen.';
+  if(phase === 'hold') return 'Kurz halten. Spannung bleibt.';
+  if(phase === 'lower') return 'Langsam absenken. Kontrolliert bleiben.';
+  if(phase === 'rest') return 'Pause. Locker atmen.';
+  return phase;
+}
 function setPhase(phase,label,className){
   state.phase = phase;
   state.label = label;
@@ -42,7 +50,7 @@ function setPhase(phase,label,className){
   state.duration = Math.max(1, durationFor(phase));
   state.remaining = state.duration;
   vibrate(phase === 'rest' ? 80 : 35);
-  speak(label);
+  speak(coachPhrase(phase));
 }
 function firstPhase(){ setPhase('lift','Heben','lift'); }
 function resetExerciseProgress(index){
@@ -59,7 +67,7 @@ function goToExercise(index){
   stopTimer(false);
   resetExerciseProgress(index);
   show('workout');
-  speak(exercises[index].name);
+  speak(`Nächste Übung: ${exercises[index].name}. Bereit machen.`);
   render();
 }
 function goToNextExercise(){
@@ -68,17 +76,33 @@ function goToNextExercise(){
   if(next >= exercises.length){ finish(); return; }
   resetExerciseProgress(next);
   show('workout');
-  speak(exercises[next].name);
+  speak(`Stark. Weiter gehts mit ${exercises[next].name}.`);
   render();
 }
 function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  if(!voices || !voices.length) return;
+  const deVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('de'));
+  preferredVoice =
+    deVoices.find(v => /google|natural|premium|enhanced/i.test(v.name)) ||
+    deVoices.find(v => /anna|siri|apple|marlene|petra|serena/i.test(v.name)) ||
+    deVoices[0] ||
+    voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) ||
+    voices[0];
+}
 function speak(text){
   if(!state.voice || !('speechSynthesis' in window)) return;
   try{
+    if(!preferredVoice) loadVoices();
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'de-DE';
-    u.rate = 1.05;
+    u.lang = preferredVoice?.lang || 'de-DE';
+    if(preferredVoice) u.voice = preferredVoice;
+    u.pitch = 1.08;
+    u.rate = 0.92;
+    u.volume = 1;
     window.speechSynthesis.speak(u);
   }catch(e){}
 }
@@ -155,7 +179,7 @@ function tick(){
 function startTimer(){
   if(state.interval) return;
   if(state.phase === 'ready'){
-    speak(`${current().name}. Satz ${state.set}. Wiederholung ${state.rep}.`);
+    speak(`${current().name}. Satz ${state.set}, Wiederholung ${state.rep}. Los gehts.`);
     firstPhase();
   }
   state.running = true;
@@ -178,7 +202,7 @@ function reset(all=true){
 function finish(){
   stopTimer(false);
   state.screen = 'done';
-  speak('Training abgeschlossen');
+  speak('Training abgeschlossen. Sehr sauber gemacht.');
   vibrate([80,60,120]);
   localStorage.removeItem('trainingCoachState');
   show('done');
@@ -189,9 +213,11 @@ function bind(id, fn){
 }
 
 load();
+loadVoices();
+if('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = loadVoices;
 renderPlan();
 bind('startWorkout', ()=>{ goToExercise(0); });
-bind('toggleVoice', ()=>{ state.voice = !state.voice; render(); });
+bind('toggleVoice', ()=>{ state.voice = !state.voice; if(state.voice) speak('Sprachansagen sind aktiviert.'); render(); });
 bind('backToSetup', ()=>{ stopTimer(false); show('setup'); render(); });
 bind('playPause', toggleTimer);
 bind('skipPhase', goToNextExercise);
