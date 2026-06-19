@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -11,17 +11,17 @@
   <main class="app">
     <section id="setup" class="screen active">
       <div class="hero">
-        <p class="eyebrow">15-Minuten Workout</p>
-        <h1>Bizeps Coach</h1>
-        <p class="subtitle">Geführtes Training mit Reps, Sätzen, Tempo, Pausen, Vibration und Sprachansagen.</p>
+        <p class="eyebrow">15-minute workout</p>
+        <h1>Biceps Coach</h1>
+        <p class="subtitle">Guided workout with reps, sets, tempo, rest periods, vibration and voice prompts.</p>
       </div>
       <div class="card">
-        <h2>Heute</h2>
+        <h2>Today</h2>
         <div id="planPreview" class="plan"></div>
       </div>
       <div class="actions sticky">
-        <button id="startWorkout" class="primary">Training starten</button>
-        <button id="toggleVoice" class="secondary">Sprachansagen: an</button>
+        <button id="startWorkout" class="primary">Start workout</button>
+        <button id="toggleVoice" class="secondary">Voice prompts: on</button>
       </div>
     </section>
 
@@ -29,8 +29,8 @@
       <header class="topbar">
         <button id="backToSetup" class="ghost">‹</button>
         <div>
-          <div id="overallLabel" class="small">Übung 1 von 7</div>
-          <strong id="exerciseName">Klassische Bizepscurls</strong>
+          <div id="overallLabel" class="small">Exercise 1 of 7</div>
+          <strong id="exerciseName">Classic Biceps Curls</strong>
         </div>
         <div id="elapsed" class="timerPill">00:00</div>
       </header>
@@ -41,35 +41,35 @@
           <circle id="ringProgress" class="ringFg" cx="60" cy="60" r="52"></circle>
         </svg>
         <div class="ringText">
-          <div id="phase" class="phase">Bereit</div>
+          <div id="phase" class="phase">Ready</div>
           <div id="seconds" class="seconds">0</div>
         </div>
       </div>
 
       <div class="stats">
-        <div class="stat"><span>Satz</span><strong id="setCount">1 / 3</strong></div>
+        <div class="stat"><span>Set</span><strong id="setCount">1 / 3</strong></div>
         <div class="stat"><span>Rep</span><strong id="repCount">1 / 10</strong></div>
-        <div class="stat"><span>Gewicht</span><strong id="load">2 × 7 kg</strong></div>
+        <div class="stat"><span>Weight</span><strong id="load">2 × 7 kg</strong></div>
       </div>
 
       <div class="card compact">
-        <div class="row"><span>Armwinkel</span><strong id="angle">170° → 40°</strong></div>
-        <div class="row"><span>Tempo</span><strong id="tempo">2s hoch · 1s halten · 4s runter</strong></div>
-        <p id="coachNote" class="note">Kein Schwung. Ellenbogen stabil.</p>
+        <div class="row"><span>Arm angle</span><strong id="angle">170° → 40°</strong></div>
+        <div class="row"><span>Tempo</span><strong id="tempo">2s up · 1s hold · 4s down</strong></div>
+        <p id="coachNote" class="note">No swinging. Keep your elbows stable.</p>
       </div>
 
       <div class="actions sticky">
         <button id="playPause" class="primary">Start</button>
-        <button id="skipPhase" class="secondary">Übung weiter</button>
+        <button id="skipPhase" class="secondary">Next exercise</button>
         <button id="resetWorkout" class="danger">Reset</button>
       </div>
     </section>
 
     <section id="done" class="screen done">
       <div class="doneMark">✓</div>
-      <h1>Training fertig</h1>
-      <p class="subtitle">Sauber erledigt. Wenn die letzten Wiederholungen stabil waren: beim nächsten Mal erst Reps erhöhen, dann Gewicht.</p>
-      <button id="restart" class="primary">Neu starten</button>
+      <h1>Workout complete</h1>
+      <p class="subtitle">Good work. If the final reps were clean, increase reps first next time, then weight.</p>
+      <button id="restart" class="primary">Start again</button>
     </section>
   </main>
   <script src="app.js"></script>
