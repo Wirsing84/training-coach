@@ -1,18 +1,18 @@
 const exercises = [
-  { name:'Klassische Bizepscurls', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:1, lower:4, rest:30, note:'Handflächen nach vorne. Oberarme bleiben am Körper. Keine Schwungbewegung.' },
-  { name:'Hammer Curls', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:1, lower:4, rest:30, note:'Handflächen zeigen zueinander. Handgelenke neutral halten. Nicht mit den Schultern ziehen.' },
-  { name:'Konzentrationscurl links', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Ellenbogen an die Innenseite des Oberschenkels. Sehr kontrolliert arbeiten.' },
-  { name:'Konzentrationscurl rechts', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Gleiche saubere Ausführung wie links. Kein Ruck aus der Schulter.' },
-  { name:'21er-Curls unten', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Nur untere Hälfte. Kontrolliert bleiben, nicht schwingen.' },
-  { name:'21er-Curls oben', load:'2 × 5 kg', sets:2, reps:7, start:90, end:40, lift:2, hold:0, lower:3, rest:0, note:'Nur obere Hälfte. Ellenbogen nicht nach vorne schieben.' },
-  { name:'21er-Curls komplett', load:'2 × 5 kg', sets:2, reps:7, start:170, end:40, lift:2, hold:0, lower:3, rest:30, note:'Voller Bewegungsumfang. Langsam absenken, sauber beenden.' }
+  { name:'Classic Biceps Curls', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:1, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
+  { name:'Hammer Curls', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:1, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
+  { name:'Concentration Curl Left', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Elbow against the inside of your thigh. Move slowly and with control.' },
+  { name:'Concentration Curl Right', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Same clean form as the left side. No jerking from the shoulder.' },
+  { name:'21s Curls Lower Half', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Lower half only. Stay controlled. Do not swing.' },
+  { name:'21s Curls Upper Half', load:'2 × 5 kg', sets:2, reps:7, start:90, end:40, lift:2, hold:0, lower:3, rest:0, note:'Upper half only. Do not let your elbows drift forward.' },
+  { name:'21s Curls Full Range', load:'2 × 5 kg', sets:2, reps:7, start:170, end:40, lift:2, hold:0, lower:3, rest:30, note:'Full range of motion. Lower slowly and finish clean.' }
 ];
 
 const $ = id => document.getElementById(id);
 const CIRC = 2 * Math.PI * 52;
 let preferredVoice = null;
 let state = {
-  screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Bereit', className:'',
+  screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'',
   remaining:0, duration:1, running:false, elapsed:0, voice:true, interval:null
 };
 
@@ -37,10 +37,10 @@ function durationFor(phase){
   return 1;
 }
 function coachPhrase(phase){
-  if(phase === 'lift') return 'Sauber hochziehen.';
-  if(phase === 'hold') return 'Kurz halten. Spannung bleibt.';
-  if(phase === 'lower') return 'Langsam absenken. Kontrolliert bleiben.';
-  if(phase === 'rest') return 'Pause. Locker atmen.';
+  if(phase === 'lift') return 'Lift smoothly. Stay strong.';
+  if(phase === 'hold') return 'Hold it. Keep the tension.';
+  if(phase === 'lower') return 'Lower slowly. Stay in control.';
+  if(phase === 'rest') return 'Rest. Breathe and relax your arms.';
   return phase;
 }
 function setPhase(phase,label,className){
@@ -52,13 +52,13 @@ function setPhase(phase,label,className){
   vibrate(phase === 'rest' ? 80 : 35);
   speak(coachPhrase(phase));
 }
-function firstPhase(){ setPhase('lift','Heben','lift'); }
+function firstPhase(){ setPhase('lift','Lift','lift'); }
 function resetExerciseProgress(index){
   state.ex = index;
   state.set = 1;
   state.rep = 1;
   state.phase = 'ready';
-  state.label = 'Bereit';
+  state.label = 'Ready';
   state.className = '';
   state.remaining = 0;
   state.duration = 1;
@@ -67,7 +67,7 @@ function goToExercise(index){
   stopTimer(false);
   resetExerciseProgress(index);
   show('workout');
-  speak(`Nächste Übung: ${exercises[index].name}. Bereit machen.`);
+  speak(`Next exercise: ${exercises[index].name}. Get ready.`);
   render();
 }
 function goToNextExercise(){
@@ -76,7 +76,7 @@ function goToNextExercise(){
   if(next >= exercises.length){ finish(); return; }
   resetExerciseProgress(next);
   show('workout');
-  speak(`Stark. Weiter gehts mit ${exercises[next].name}.`);
+  speak(`Nice work. Next up: ${exercises[next].name}.`);
   render();
 }
 function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
@@ -84,12 +84,10 @@ function loadVoices(){
   if(!('speechSynthesis' in window)) return;
   const voices = window.speechSynthesis.getVoices();
   if(!voices || !voices.length) return;
-  const deVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('de'));
+  const enVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en'));
   preferredVoice =
-    deVoices.find(v => /google|natural|premium|enhanced/i.test(v.name)) ||
-    deVoices.find(v => /anna|siri|apple|marlene|petra|serena/i.test(v.name)) ||
-    deVoices[0] ||
-    voices.find(v => (v.lang || '').toLowerCase().startsWith('en')) ||
+    enVoices.find(v => /google|natural|premium|enhanced|samantha|alex|daniel|serena/i.test(v.name)) ||
+    enVoices[0] ||
     voices[0];
 }
 function speak(text){
@@ -98,9 +96,9 @@ function speak(text){
     if(!preferredVoice) loadVoices();
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = preferredVoice?.lang || 'de-DE';
+    u.lang = preferredVoice?.lang || 'en-US';
     if(preferredVoice) u.voice = preferredVoice;
-    u.pitch = 1.08;
+    u.pitch = 1.06;
     u.rate = 0.92;
     u.volume = 1;
     window.speechSynthesis.speak(u);
@@ -117,7 +115,7 @@ function renderPlan(){
     const item = document.createElement('button');
     item.type = 'button';
     item.className = 'planItem';
-    item.setAttribute('aria-label', `${e.name} starten`);
+    item.setAttribute('aria-label', `Start ${e.name}`);
     item.innerHTML = `<div class="planNo">${i+1}</div><div class="planText"><strong>${e.name}</strong><span>${e.sets}×${e.reps} · ${e.load} · ${e.start}° → ${e.end}° · ${e.lift}/${e.hold}/${e.lower}s</span></div>`;
     ['click','touchend'].forEach(ev => item.addEventListener(ev, event => { event.preventDefault(); goToExercise(i); }, { passive:false }));
     $('planPreview').appendChild(item);
@@ -125,21 +123,21 @@ function renderPlan(){
 }
 function render(){
   const e = current();
-  $('overallLabel').textContent = `Übung ${state.ex + 1} von ${exercises.length}`;
+  $('overallLabel').textContent = `Exercise ${state.ex + 1} of ${exercises.length}`;
   $('exerciseName').textContent = e.name;
   $('elapsed').textContent = fmt(state.elapsed);
-  $('phase').textContent = state.phase === 'ready' ? 'Bereit' : state.label;
+  $('phase').textContent = state.phase === 'ready' ? 'Ready' : state.label;
   $('phase').className = 'phase ' + state.className;
   $('seconds').textContent = state.phase === 'ready' ? durationFor('lift') : state.remaining;
   $('setCount').textContent = `${state.set} / ${e.sets}`;
   $('repCount').textContent = `${state.rep} / ${e.reps}`;
   $('load').textContent = e.load;
   $('angle').textContent = `${e.start}° → ${e.end}°`;
-  $('tempo').textContent = `${e.lift}s hoch · ${e.hold}s halten · ${e.lower}s runter`;
+  $('tempo').textContent = `${e.lift}s up · ${e.hold}s hold · ${e.lower}s down`;
   $('coachNote').textContent = e.note;
   $('playPause').textContent = state.running ? 'Pause' : 'Start';
-  $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Training beenden' : 'Übung weiter';
-  $('toggleVoice').textContent = `Sprachansagen: ${state.voice ? 'an' : 'aus'}`;
+  $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Finish workout' : 'Next exercise';
+  $('toggleVoice').textContent = `Voice prompts: ${state.voice ? 'on' : 'off'}`;
   const progress = state.duration ? Math.max(0, Math.min(1, 1 - state.remaining / state.duration)) : 0;
   $('ringProgress').style.strokeDasharray = CIRC;
   $('ringProgress').style.strokeDashoffset = CIRC * (1 - progress);
@@ -149,11 +147,11 @@ function render(){
 function advance(){
   const e = current();
   if(state.phase === 'lift'){
-    e.hold > 0 ? setPhase('hold','Halten','hold') : setPhase('lower','Absenken','lower');
+    e.hold > 0 ? setPhase('hold','Hold','hold') : setPhase('lower','Lower','lower');
     return;
   }
   if(state.phase === 'hold'){
-    setPhase('lower','Absenken','lower');
+    setPhase('lower','Lower','lower');
     return;
   }
   if(state.phase === 'lower'){
@@ -161,11 +159,11 @@ function advance(){
     if(state.rep <= e.reps){ firstPhase(); return; }
     state.rep = 1;
     state.set++;
-    if(state.set <= e.sets){ setPhase('rest','Pause','rest'); return; }
+    if(state.set <= e.sets){ setPhase('rest','Rest','rest'); return; }
     state.set = 1;
     state.ex++;
     if(state.ex >= exercises.length){ finish(); return; }
-    if(e.rest > 0) setPhase('rest','Pause','rest'); else firstPhase();
+    if(e.rest > 0) setPhase('rest','Rest','rest'); else firstPhase();
     return;
   }
   if(state.phase === 'rest') firstPhase();
@@ -179,7 +177,7 @@ function tick(){
 function startTimer(){
   if(state.interval) return;
   if(state.phase === 'ready'){
-    speak(`${current().name}. Satz ${state.set}, Wiederholung ${state.rep}. Los gehts.`);
+    speak(`${current().name}. Set ${state.set}, rep ${state.rep}. Let's go.`);
     firstPhase();
   }
   state.running = true;
@@ -194,7 +192,7 @@ function stopTimer(renderAfter=true){
 function toggleTimer(){ state.running ? stopTimer() : startTimer(); }
 function reset(all=true){
   stopTimer(false);
-  state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Bereit', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null };
+  state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null };
   if(all) localStorage.removeItem('trainingCoachState');
   show('setup');
   render();
@@ -202,7 +200,7 @@ function reset(all=true){
 function finish(){
   stopTimer(false);
   state.screen = 'done';
-  speak('Training abgeschlossen. Sehr sauber gemacht.');
+  speak('Workout complete. Great job.');
   vibrate([80,60,120]);
   localStorage.removeItem('trainingCoachState');
   show('done');
@@ -217,7 +215,7 @@ loadVoices();
 if('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = loadVoices;
 renderPlan();
 bind('startWorkout', ()=>{ goToExercise(0); });
-bind('toggleVoice', ()=>{ state.voice = !state.voice; if(state.voice) speak('Sprachansagen sind aktiviert.'); render(); });
+bind('toggleVoice', ()=>{ state.voice = !state.voice; if(state.voice) speak('Voice prompts are on.'); render(); });
 bind('backToSetup', ()=>{ stopTimer(false); show('setup'); render(); });
 bind('playPause', toggleTimer);
 bind('skipPhase', goToNextExercise);
