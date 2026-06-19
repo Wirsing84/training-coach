@@ -38,9 +38,9 @@ function durationFor(phase){
   return 1;
 }
 function coachPhrase(phase){
-  if(phase === 'lift') return 'Lift.';
-  if(phase === 'hold') return 'Hold.';
-  if(phase === 'lower') return 'Lower.';
+  if(phase === 'lift') return 'Up.';
+  if(phase === 'hold') return 'Steady.';
+  if(phase === 'lower') return 'Down.';
   if(phase === 'rest') return 'Well done. Rest. Breathe and relax your arms.';
   return phase;
 }
