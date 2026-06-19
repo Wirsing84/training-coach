@@ -45,6 +45,32 @@ function setPhase(phase,label,className){
   speak(label);
 }
 function firstPhase(){ setPhase('lift','Heben','lift'); }
+function resetExerciseProgress(index){
+  state.ex = index;
+  state.set = 1;
+  state.rep = 1;
+  state.phase = 'ready';
+  state.label = 'Bereit';
+  state.className = '';
+  state.remaining = 0;
+  state.duration = 1;
+}
+function goToExercise(index){
+  stopTimer(false);
+  resetExerciseProgress(index);
+  show('workout');
+  speak(exercises[index].name);
+  render();
+}
+function goToNextExercise(){
+  stopTimer(false);
+  const next = state.ex + 1;
+  if(next >= exercises.length){ finish(); return; }
+  resetExerciseProgress(next);
+  show('workout');
+  speak(exercises[next].name);
+  render();
+}
 function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
 function speak(text){
   if(!state.voice || !('speechSynthesis' in window)) return;
@@ -64,9 +90,12 @@ function show(screen){
 function renderPlan(){
   $('planPreview').innerHTML = '';
   exercises.forEach((e,i)=>{
-    const item = document.createElement('div');
+    const item = document.createElement('button');
+    item.type = 'button';
     item.className = 'planItem';
+    item.setAttribute('aria-label', `${e.name} starten`);
     item.innerHTML = `<div class="planNo">${i+1}</div><div class="planText"><strong>${e.name}</strong><span>${e.sets}×${e.reps} · ${e.load} · ${e.start}° → ${e.end}° · ${e.lift}/${e.hold}/${e.lower}s</span></div>`;
+    ['click','touchend'].forEach(ev => item.addEventListener(ev, event => { event.preventDefault(); goToExercise(i); }, { passive:false }));
     $('planPreview').appendChild(item);
   });
 }
@@ -85,6 +114,7 @@ function render(){
   $('tempo').textContent = `${e.lift}s hoch · ${e.hold}s halten · ${e.lower}s runter`;
   $('coachNote').textContent = e.note;
   $('playPause').textContent = state.running ? 'Pause' : 'Start';
+  $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Training beenden' : 'Übung weiter';
   $('toggleVoice').textContent = `Sprachansagen: ${state.voice ? 'an' : 'aus'}`;
   const progress = state.duration ? Math.max(0, Math.min(1, 1 - state.remaining / state.duration)) : 0;
   $('ringProgress').style.strokeDasharray = CIRC;
@@ -132,22 +162,21 @@ function startTimer(){
   state.interval = setInterval(tick, 1000);
   render();
 }
-function stopTimer(){
+function stopTimer(renderAfter=true){
   state.running = false;
   if(state.interval){ clearInterval(state.interval); state.interval = null; }
-  render();
+  if(renderAfter) render();
 }
 function toggleTimer(){ state.running ? stopTimer() : startTimer(); }
-function skipPhase(){ if(state.phase === 'ready') firstPhase(); else advance(); render(); }
 function reset(all=true){
-  stopTimer();
+  stopTimer(false);
   state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Bereit', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null };
   if(all) localStorage.removeItem('trainingCoachState');
   show('setup');
   render();
 }
 function finish(){
-  stopTimer();
+  stopTimer(false);
   state.screen = 'done';
   speak('Training abgeschlossen');
   vibrate([80,60,120]);
@@ -161,11 +190,11 @@ function bind(id, fn){
 
 load();
 renderPlan();
-bind('startWorkout', ()=>{ show('workout'); render(); });
+bind('startWorkout', ()=>{ goToExercise(0); });
 bind('toggleVoice', ()=>{ state.voice = !state.voice; render(); });
-bind('backToSetup', ()=>{ stopTimer(); show('setup'); });
+bind('backToSetup', ()=>{ stopTimer(false); show('setup'); render(); });
 bind('playPause', toggleTimer);
-bind('skipPhase', skipPhase);
+bind('skipPhase', goToNextExercise);
 bind('resetWorkout', ()=>reset(true));
 bind('restart', ()=>reset(true));
 show(state.screen || 'setup');
