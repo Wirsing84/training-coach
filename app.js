@@ -1,6 +1,6 @@
 const exercises = [
-  { name:'Classic Biceps Curls', image:'images/classic-biceps-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:1, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
-  { name:'Hammer Curls', image:'images/hammer-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:1, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
+  { name:'Classic Biceps Curls', image:'images/classic-biceps-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:40, lift:2, hold:2, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
+  { name:'Hammer Curls', image:'images/hammer-curl.jpg', load:'2 × 7 kg', sets:3, reps:10, start:170, end:50, lift:2, hold:2, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
   { name:'Concentration Curl Left', image:'images/concentration-curl-left.jpg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Elbow against the inside of your thigh. Move slowly and with control.' },
   { name:'Concentration Curl Right', image:'images/concentration-curl-right.jpg', load:'1 × 10 kg', sets:2, reps:8, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Same clean form as the left side. No jerking from the shoulder.' },
   { name:'21s Curls Lower Half', image:'images/twenty-ones-lower-half.jpg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Lower half only. Stay controlled. Do not swing.' },
@@ -32,7 +32,7 @@ function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(
 function durationFor(phase){
   const e = current();
   if(phase === 'lift') return e.lift;
-  if(phase === 'hold') return e.hold;
+  if(phase === 'hold') return Math.max(e.hold, 2);
   if(phase === 'lower') return e.lower;
   if(phase === 'rest') return e.rest || 20;
   return 1;
@@ -148,7 +148,7 @@ function render(){
   $('repCount').textContent = `${state.rep} / ${e.reps}`;
   $('load').textContent = e.load;
   $('angle').textContent = `${e.start}° → ${e.end}°`;
-  $('tempo').textContent = `${e.lift}s up · ${e.hold}s hold · ${e.lower}s down`;
+  $('tempo').textContent = `${e.lift}s up · ${durationFor('hold')}s hold · ${e.lower}s down`;
   $('coachNote').textContent = e.note;
   $('playPause').textContent = state.running ? 'Pause' : 'Start';
   $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Finish workout' : 'Next exercise';
