@@ -1,0 +1,10 @@
+{
+  "name": "Training Coach",
+  "short_name": "Coach",
+  "description": "Mobiler 15-Minuten Bizeps-Trainingscoach mit Timer, Reps und Pausen.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": []
+}
