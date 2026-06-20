@@ -37,8 +37,21 @@ function durationFor(phase){
   if(phase === 'rest') return e.rest || 20;
   return 1;
 }
+function repCue(){
+  const e = current();
+  const remainingAfterThis = e.reps - state.rep;
+  if(remainingAfterThis === 0) return `Rep ${state.rep}. Last one.`;
+  if(remainingAfterThis === 1) return `Rep ${state.rep}. Two left.`;
+  if(remainingAfterThis === 2) return `Rep ${state.rep}. Three left.`;
+  return `Rep ${state.rep}.`;
+}
+function setCue(){
+  const e = current();
+  if(state.set === e.sets) return `Set ${state.set}. Final set.`;
+  return `Set ${state.set}.`;
+}
 function coachPhrase(phase){
-  if(phase === 'lift') return 'Up.';
+  if(phase === 'lift') return repCue();
   if(phase === 'hold') return 'Steady.';
   if(phase === 'lower') return 'Down.';
   if(phase === 'rest') return 'Well done. Rest. Breathe and relax your arms.';
@@ -197,7 +210,7 @@ function tick(){
 function startTimer(){
   if(state.interval) return;
   if(state.phase === 'ready'){
-    speak(`${current().name}. Set ${state.set}, rep ${state.rep}. Let's go.`);
+    speak(`${current().name}. ${setCue()}`);
     firstPhase();
   } else if(state.remaining > 0) {
     const now = Date.now();
