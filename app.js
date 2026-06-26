@@ -1,269 +1,43 @@
-const exercises = [
-  { name:'Classic Biceps Curls', image:'images/classic-biceps-curl.jpg', load:'2 × 7 kg', sets:3, reps:7, start:170, end:40, lift:2, hold:2, lower:4, rest:30, note:'Palms facing forward. Upper arms stay close to your body. No swinging.' },
-  { name:'Hammer Curls', image:'images/hammer-curl.jpg', load:'2 × 7 kg', sets:3, reps:7, start:170, end:50, lift:2, hold:2, lower:4, rest:30, note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.' },
-  { name:'Concentration Curl Left', image:'images/concentration-curl-left.jpg', load:'1 × 10 kg', sets:2, reps:5, start:160, end:30, lift:2, hold:2, lower:5, rest:0, note:'Elbow against the inside of your thigh. Move slowly and with control.' },
-  { name:'Concentration Curl Right', image:'images/concentration-curl-right.jpg', load:'1 × 10 kg', sets:2, reps:5, start:160, end:30, lift:2, hold:2, lower:5, rest:20, note:'Same clean form as the left side. No jerking from the shoulder.' },
-  { name:'21s Curls Lower Half', image:'images/twenty-ones-lower-half.jpg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:90, lift:2, hold:0, lower:3, rest:0, note:'Lower half only. Stay controlled. Do not swing.' },
-  { name:'21s Curls Upper Half', image:'images/twenty-ones-upper-half.jpg', load:'2 × 5 kg', sets:2, reps:7, start:90, end:40, lift:2, hold:0, lower:3, rest:0, note:'Upper half only. Do not let your elbows drift forward.' },
-  { name:'21s Curls Full Range', image:'images/twenty-ones-full-range.jpg', load:'2 × 5 kg', sets:2, reps:7, start:170, end:40, lift:2, hold:0, lower:3, rest:30, note:'Full range of motion. Lower slowly and finish clean.' }
+const exercises=[
+{name:'Classic Biceps Curls',image:'images/classic-biceps-curl.jpg',load:'2 × 7 kg',sets:3,reps:7,start:170,end:40,lift:2,hold:2,lower:4,rest:30,note:'Palms forward. Upper arms close to your body. No swinging.'},
+{name:'Hammer Curls',image:'images/hammer-curl.jpg',load:'2 × 7 kg',sets:3,reps:7,start:170,end:50,lift:2,hold:2,lower:4,rest:30,note:'Palms face each other. Keep wrists neutral. Do not pull with your shoulders.'},
+{name:'Concentration Curl Left',image:'images/concentration-curl-left.jpg',load:'1 × 10 kg',sets:2,reps:5,start:160,end:30,lift:2,hold:2,lower:5,rest:0,note:'Elbow against the inside of your thigh. Move slowly and with control.'},
+{name:'Concentration Curl Right',image:'images/concentration-curl-right.jpg',load:'1 × 10 kg',sets:2,reps:5,start:160,end:30,lift:2,hold:2,lower:5,rest:20,note:'Same clean form as the left side. Keep the shoulder quiet.'},
+{name:'21s Curls Lower Half',image:'images/twenty-ones-lower-half.jpg',load:'2 × 5 kg',sets:2,reps:7,start:170,end:90,lift:2,hold:0,lower:3,rest:0,note:'Lower half only. Stay controlled. Do not swing.'},
+{name:'21s Curls Upper Half',image:'images/twenty-ones-upper-half.jpg',load:'2 × 5 kg',sets:2,reps:7,start:90,end:40,lift:2,hold:0,lower:3,rest:0,note:'Upper half only. Do not let your elbows drift forward.'},
+{name:'21s Curls Full Range',image:'images/twenty-ones-full-range.jpg',load:'2 × 5 kg',sets:2,reps:7,start:170,end:40,lift:2,hold:0,lower:3,rest:30,note:'Full range of motion. Lower slowly and finish clean.'}
 ];
-
-const $ = id => document.getElementById(id);
-const CIRC = 2 * Math.PI * 52;
-let preferredVoice = null;
-let state = {
-  screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'',
-  remaining:0, duration:1, running:false, elapsed:0, voice:true, interval:null,
-  phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null, elapsedBeforeStart:0
-};
-
-function save(){
-  const { interval, ...copy } = state;
-  localStorage.setItem('trainingCoachState', JSON.stringify(copy));
-}
-function load(){
-  try{
-    const stored = JSON.parse(localStorage.getItem('trainingCoachState') || 'null');
-    if(stored && stored.screen !== 'done') state = { ...state, ...stored, running:false, interval:null, phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null };
-  }catch(e){}
-}
-function current(){ return exercises[state.ex]; }
-function fmt(s){ return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(Math.floor(s%60)).padStart(2,'0'); }
-function durationFor(phase){
-  const e = current();
-  if(phase === 'lift') return e.lift;
-  if(phase === 'hold') return Math.max(e.hold, 2);
-  if(phase === 'lower') return e.lower;
-  if(phase === 'rest') return e.rest || 20;
-  return 1;
-}
-function repCue(){
-  const e = current();
-  const remainingAfterThis = e.reps - state.rep;
-  if(remainingAfterThis === 0) return `Rep ${state.rep}. Last one.`;
-  if(remainingAfterThis === 1) return `Rep ${state.rep}. Two left.`;
-  if(remainingAfterThis === 2) return `Rep ${state.rep}. Three left.`;
-  return `Rep ${state.rep}.`;
-}
-function setCue(){
-  const e = current();
-  if(state.set === e.sets) return `Set ${state.set}. Final set.`;
-  return `Set ${state.set}.`;
-}
-function coachPhrase(phase){
-  if(phase === 'lift') return repCue();
-  if(phase === 'hold') return 'Steady.';
-  if(phase === 'lower') return 'Down.';
-  if(phase === 'rest') return 'Well done. Rest. Breathe and relax your arms.';
-  return phase;
-}
-function setPhase(phase,label,className){
-  state.phase = phase;
-  state.label = label;
-  state.className = className;
-  state.duration = Math.max(1, durationFor(phase));
-  state.remaining = state.duration;
-  const now = Date.now();
-  state.phaseStartedAt = now;
-  state.phaseEndsAt = now + state.duration * 1000;
-  vibrate(phase === 'rest' ? 80 : 35);
-  speak(coachPhrase(phase));
-}
-function firstPhase(){ setPhase('lift','Lift','lift'); }
-function resetExerciseProgress(index){
-  state.ex = index;
-  state.set = 1;
-  state.rep = 1;
-  state.phase = 'ready';
-  state.label = 'Ready';
-  state.className = '';
-  state.remaining = 0;
-  state.duration = 1;
-  state.phaseStartedAt = null;
-  state.phaseEndsAt = null;
-}
-function goToExercise(index){
-  stopTimer(false);
-  resetExerciseProgress(index);
-  show('workout');
-  speak(`Next exercise: ${exercises[index].name}. Get ready.`);
-  render();
-}
-function goToNextExercise(){
-  stopTimer(false);
-  const next = state.ex + 1;
-  if(next >= exercises.length){ finish(); return; }
-  resetExerciseProgress(next);
-  show('workout');
-  speak(`Nice work. Next up: ${exercises[next].name}.`);
-  render();
-}
-function vibrate(ms){ if(navigator.vibrate) navigator.vibrate(ms); }
-function loadVoices(){
-  if(!('speechSynthesis' in window)) return;
-  const voices = window.speechSynthesis.getVoices();
-  if(!voices || !voices.length) return;
-  const enVoices = voices.filter(v => (v.lang || '').toLowerCase().startsWith('en'));
-  preferredVoice =
-    enVoices.find(v => /google|natural|premium|enhanced|samantha|alex|daniel|serena/i.test(v.name)) ||
-    enVoices[0] ||
-    voices[0];
-}
-function speak(text){
-  if(!state.voice || !('speechSynthesis' in window)) return;
-  try{
-    if(!preferredVoice) loadVoices();
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = preferredVoice?.lang || 'en-US';
-    if(preferredVoice) u.voice = preferredVoice;
-    u.pitch = 1.06;
-    u.rate = 0.92;
-    u.volume = 1;
-    window.speechSynthesis.speak(u);
-  }catch(e){}
-}
-function show(screen){
-  ['setup','workout','done'].forEach(id => $(id).classList.toggle('active', id === screen));
-  state.screen = screen;
-  save();
-}
-function renderPlan(){
-  $('planPreview').innerHTML = '';
-  exercises.forEach((e,i)=>{
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'planItem';
-    item.setAttribute('aria-label', `Start ${e.name}`);
-    item.innerHTML = `<div class="planNo">${i+1}</div><div class="planText"><strong>${e.name}</strong><span>${e.sets}×${e.reps} · ${e.load} · ${e.start}° → ${e.end}° · ${e.lift}/${e.hold}/${e.lower}s</span></div>`;
-    ['click','touchend'].forEach(ev => item.addEventListener(ev, event => { event.preventDefault(); goToExercise(i); }, { passive:false }));
-    $('planPreview').appendChild(item);
-  });
-}
-function updateTimeFromClock(){
-  if(!state.running) return;
-  const now = Date.now();
-  if(state.workoutStartedAt) state.elapsed = state.elapsedBeforeStart + (now - state.workoutStartedAt) / 1000;
-  if(state.phaseEndsAt) state.remaining = Math.max(0, Math.ceil((state.phaseEndsAt - now) / 1000));
-}
-function render(){
-  updateTimeFromClock();
-  const e = current();
-  $('overallLabel').textContent = `Exercise ${state.ex + 1} of ${exercises.length}`;
-  $('exerciseName').textContent = e.name;
-  $('exerciseImage').src = e.image;
-  $('exerciseImage').alt = `${e.name} movement illustration`;
-  $('elapsed').textContent = fmt(state.elapsed);
-  $('phase').textContent = state.phase === 'ready' ? 'Ready' : state.label;
-  $('phase').className = 'phase ' + state.className;
-  $('seconds').textContent = state.phase === 'ready' ? durationFor('lift') : Math.max(1, state.remaining);
-  $('setCount').textContent = `${state.set} / ${e.sets}`;
-  $('repCount').textContent = `${state.rep} / ${e.reps}`;
-  $('load').textContent = e.load;
-  $('angle').textContent = `${e.start}° → ${e.end}°`;
-  $('tempo').textContent = `${e.lift}s up · ${durationFor('hold')}s hold · ${e.lower}s down`;
-  $('coachNote').textContent = e.note;
-  $('playPause').textContent = state.running ? 'Pause' : 'Start';
-  $('skipPhase').textContent = state.ex === exercises.length - 1 ? 'Finish workout' : 'Next exercise';
-  $('toggleVoice').textContent = `Voice prompts: ${state.voice ? 'on' : 'off'}`;
-  const now = Date.now();
-  let progress = 0;
-  if(state.phaseStartedAt && state.phaseEndsAt && state.duration){
-    progress = Math.max(0, Math.min(1, (now - state.phaseStartedAt) / (state.duration * 1000)));
-  }
-  $('ringProgress').style.strokeDasharray = CIRC;
-  $('ringProgress').style.strokeDashoffset = CIRC * (1 - progress);
-  $('ringProgress').style.stroke = state.className === 'lift' ? '#22c55e' : state.className === 'hold' ? '#f59e0b' : state.className === 'rest' ? '#ef4444' : '#38bdf8';
-  save();
-}
-function advance(){
-  const e = current();
-  if(state.phase === 'lift'){
-    e.hold > 0 ? setPhase('hold','Hold','hold') : setPhase('lower','Lower','lower');
-    return;
-  }
-  if(state.phase === 'hold'){
-    setPhase('lower','Lower','lower');
-    return;
-  }
-  if(state.phase === 'lower'){
-    state.rep++;
-    if(state.rep <= e.reps){ firstPhase(); return; }
-    state.rep = 1;
-    state.set++;
-    if(state.set <= e.sets){ setPhase('rest','Rest','rest'); return; }
-    state.set = 1;
-    state.ex++;
-    if(state.ex >= exercises.length){ finish(); return; }
-    if(e.rest > 0) setPhase('rest','Rest','rest'); else firstPhase();
-    return;
-  }
-  if(state.phase === 'rest') firstPhase();
-}
-function tick(){
-  updateTimeFromClock();
-  if(state.running && state.phaseEndsAt && Date.now() >= state.phaseEndsAt){
-    advance();
-  }
-  render();
-}
-function startTimer(){
-  if(state.interval) return;
-  if(state.phase === 'ready'){
-    speak(`${current().name}. ${setCue()}`);
-    firstPhase();
-  } else if(state.remaining > 0) {
-    const now = Date.now();
-    state.phaseStartedAt = now - (state.duration - state.remaining) * 1000;
-    state.phaseEndsAt = now + state.remaining * 1000;
-  }
-  state.running = true;
-  state.workoutStartedAt = Date.now();
-  state.elapsedBeforeStart = state.elapsed || 0;
-  state.interval = setInterval(tick, 100);
-  render();
-}
-function stopTimer(renderAfter=true){
-  updateTimeFromClock();
-  state.running = false;
-  if(state.interval){ clearInterval(state.interval); state.interval = null; }
-  state.elapsedBeforeStart = state.elapsed || 0;
-  state.workoutStartedAt = null;
-  state.phaseStartedAt = null;
-  state.phaseEndsAt = null;
-  if(renderAfter) render();
-}
-function toggleTimer(){ state.running ? stopTimer() : startTimer(); }
-function reset(all=true){
-  stopTimer(false);
-  state = { ...state, screen:'setup', ex:0, set:1, rep:1, phase:'ready', label:'Ready', className:'', remaining:0, duration:1, running:false, elapsed:0, interval:null, phaseStartedAt:null, phaseEndsAt:null, workoutStartedAt:null, elapsedBeforeStart:0 };
-  if(all) localStorage.removeItem('trainingCoachState');
-  show('setup');
-  render();
-}
-function finish(){
-  stopTimer(false);
-  state.screen = 'done';
-  speak('Workout complete. Great job.');
-  vibrate([80,60,120]);
-  localStorage.removeItem('trainingCoachState');
-  show('done');
-}
-function bind(id, fn){
-  const el = $(id);
-  ['click','touchend'].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); fn(); }, { passive:false }));
-}
-
-load();
-loadVoices();
-if('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = loadVoices;
-renderPlan();
-bind('startWorkout', ()=>{ goToExercise(0); });
-bind('toggleVoice', ()=>{ state.voice = !state.voice; if(state.voice) speak('Voice prompts are on.'); render(); });
-bind('backToSetup', ()=>{ stopTimer(false); show('setup'); render(); });
-bind('playPause', toggleTimer);
-bind('skipPhase', goToNextExercise);
-bind('resetWorkout', ()=>reset(true));
-bind('restart', ()=>reset(true));
-show(state.screen || 'setup');
-render();
+const $=id=>document.getElementById(id),CIRC=2*Math.PI*52;
+let preferredVoice=null;
+let state={screen:'setup',ex:0,set:1,rep:1,phase:'ready',label:'Ready',className:'ready',remaining:10,duration:10,running:false,elapsed:0,voice:true,interval:null,phaseStartedAt:null,phaseEndsAt:null,workoutStartedAt:null,elapsedBeforeStart:0,readyCountdownSpoken:null};
+function save(){const{interval,...copy}=state;localStorage.setItem('trainingCoachState',JSON.stringify(copy))}
+function load(){try{const s=JSON.parse(localStorage.getItem('trainingCoachState')||'null');if(s&&s.screen!=='done')state={...state,...s,running:false,interval:null,phaseStartedAt:null,phaseEndsAt:null,workoutStartedAt:null}}catch(e){}}
+function current(){return exercises[state.ex]}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')}
+function dur(p,e=current()){if(p==='ready')return 10;if(p==='lift')return e.lift;if(p==='hold')return Math.max(e.hold,2);if(p==='lower')return e.lower;if(p==='rest')return e.rest||20;return 1}
+function repCue(){const e=current(),left=e.reps-state.rep;if(left===0)return`Rep ${state.rep}. Last one.`;if(left===1)return`Rep ${state.rep}. Two left.`;if(left===2)return`Rep ${state.rep}. Three left.`;return`Rep ${state.rep}.`}
+function setCue(){const e=current();return state.set===e.sets?`Set ${state.set}. Final set.`:`Set ${state.set}.`}
+function phrase(p){if(p==='ready')return'Get ready.';if(p==='lift')return repCue();if(p==='hold')return'Hold it.';if(p==='lower')return'Down.';if(p==='rest')return'Well done. Rest. Breathe and relax your arms.';return p}
+function speak(t){if(!state.voice||!('speechSynthesis'in window))return;try{if(!preferredVoice)loadVoices();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=preferredVoice?.lang||'en-US';if(preferredVoice)u.voice=preferredVoice;u.pitch=1.06;u.rate=.92;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
+function loadVoices(){if(!('speechSynthesis'in window))return;const v=speechSynthesis.getVoices();if(!v.length)return;const en=v.filter(x=>(x.lang||'').toLowerCase().startsWith('en'));preferredVoice=en.find(x=>/google|natural|premium|enhanced|samantha|alex|daniel|serena/i.test(x.name))||en[0]||v[0]}
+function vibrate(ms){if(navigator.vibrate)navigator.vibrate(ms)}
+function setPhase(p,l,c){state.phase=p;state.label=l;state.className=c;state.duration=dur(p);state.remaining=state.duration;state.readyCountdownSpoken=null;const now=Date.now();state.phaseStartedAt=now;state.phaseEndsAt=now+state.duration*1000;vibrate(p==='rest'?80:35);speak(phrase(p))}
+function readyPhase(){setPhase('ready','Ready','ready')}
+function firstPhase(){setPhase('lift','Lift','lift')}
+function resetExerciseProgress(i){state.ex=i;state.set=1;state.rep=1;state.phase='ready';state.label='Ready';state.className='ready';state.remaining=10;state.duration=10;state.phaseStartedAt=null;state.phaseEndsAt=null;state.readyCountdownSpoken=null}
+function show(s){['setup','workout','done'].forEach(id=>$(id).classList.toggle('active',id===s));state.screen=s;save()}
+function goToExercise(i){stopTimer(false);resetExerciseProgress(i);show('workout');speak(`Next exercise: ${exercises[i].name}.`);render()}
+function goToNextExercise(){stopTimer(false);const n=state.ex+1;if(n>=exercises.length){finish();return}resetExerciseProgress(n);show('workout');speak(`Nice work. Next up: ${exercises[n].name}.`);render()}
+function renderPlan(){$('planPreview').innerHTML='';exercises.forEach((e,i)=>{const b=document.createElement('button');b.type='button';b.className='planItem';b.setAttribute('aria-label',`Start ${e.name}`);b.innerHTML=`<div class="planNo">${i+1}</div><div class="planText"><strong>${e.name}</strong><span>${e.sets}×${e.reps} · ${e.load} · ${e.start}° → ${e.end}° · ${e.lift}/${dur('hold',e)}/${e.lower}s</span></div>`;['click','touchend'].forEach(ev=>b.addEventListener(ev,x=>{x.preventDefault();goToExercise(i)},{passive:false}));$('planPreview').appendChild(b)})}
+function updateTimeFromClock(){if(!state.running)return;const now=Date.now();if(state.workoutStartedAt)state.elapsed=state.elapsedBeforeStart+(now-state.workoutStartedAt)/1000;if(state.phaseEndsAt)state.remaining=Math.max(0,Math.ceil((state.phaseEndsAt-now)/1000))}
+function handleReadyCountdown(){if(!state.running||state.phase!=='ready')return;const s=state.remaining;if(s<=5&&s>=1&&state.readyCountdownSpoken!==s){state.readyCountdownSpoken=s;speak(String(s))}}
+function render(){updateTimeFromClock();const e=current();$('overallLabel').textContent=`Exercise ${state.ex+1} of ${exercises.length}`;$('exerciseName').textContent=e.name;$('exerciseImage').src=e.image;$('exerciseImage').alt=`${e.name} movement illustration`;$('elapsed').textContent=fmt(state.elapsed);$('phase').textContent=state.phase==='ready'?'Ready':state.label;$('phase').className='phase '+state.className;$('seconds').textContent=Math.max(1,state.remaining||dur('ready'));$('setCount').textContent=`${state.set} / ${e.sets}`;$('repCount').textContent=`${state.rep} / ${e.reps}`;$('load').textContent=e.load;$('angle').textContent=`${e.start}° → ${e.end}°`;$('tempo').textContent=`${e.lift}s up · ${dur('hold',e)}s hold · ${e.lower}s down`;$('coachNote').textContent=e.note;$('playPause').textContent=state.running?'Pause':'Start';$('skipPhase').textContent=state.ex===exercises.length-1?'Finish workout':'Next exercise';$('toggleVoice').textContent=`Voice prompts: ${state.voice?'on':'off'}`;const now=Date.now();let p=0;if(state.phaseStartedAt&&state.duration)p=Math.max(0,Math.min(1,(now-state.phaseStartedAt)/(state.duration*1000)));$('ringProgress').style.strokeDasharray=CIRC;$('ringProgress').style.strokeDashoffset=CIRC*(1-p);$('ringProgress').style.stroke=state.className==='lift'?'#22c55e':state.className==='hold'?'#f59e0b':state.className==='rest'?'#ef4444':'#38bdf8';save()}
+function advance(){const e=current();if(state.phase==='ready'){firstPhase();return}if(state.phase==='lift'){e.hold>0?setPhase('hold','Hold','hold'):setPhase('lower','Lower','lower');return}if(state.phase==='hold'){setPhase('lower','Lower','lower');return}if(state.phase==='lower'){state.rep++;if(state.rep<=e.reps){firstPhase();return}state.rep=1;state.set++;if(state.set<=e.sets){setPhase('rest','Rest','rest');return}state.set=1;state.ex++;if(state.ex>=exercises.length){finish();return}e.rest>0?setPhase('rest','Rest','rest'):readyPhase();return}if(state.phase==='rest')readyPhase()}
+function tick(){updateTimeFromClock();handleReadyCountdown();if(state.running&&state.phaseEndsAt&&Date.now()>=state.phaseEndsAt)advance();render()}
+function startTimer(){if(state.interval)return;if(state.phase==='ready'){speak(`${current().name}. ${setCue()}`);readyPhase()}else if(state.remaining>0){const now=Date.now();state.phaseStartedAt=now-(state.duration-state.remaining)*1000;state.phaseEndsAt=now+state.remaining*1000}state.running=true;state.workoutStartedAt=Date.now();state.elapsedBeforeStart=state.elapsed||0;state.interval=setInterval(tick,100);render()}
+function stopTimer(renderAfter=true){updateTimeFromClock();state.running=false;if(state.interval){clearInterval(state.interval);state.interval=null}state.elapsedBeforeStart=state.elapsed||0;state.workoutStartedAt=null;state.phaseStartedAt=null;state.phaseEndsAt=null;if(renderAfter)render()}
+function toggleTimer(){state.running?stopTimer():startTimer()}
+function reset(all=true){stopTimer(false);state={...state,screen:'setup',ex:0,set:1,rep:1,phase:'ready',label:'Ready',className:'ready',remaining:10,duration:10,running:false,elapsed:0,interval:null,phaseStartedAt:null,phaseEndsAt:null,workoutStartedAt:null,elapsedBeforeStart:0,readyCountdownSpoken:null};if(all)localStorage.removeItem('trainingCoachState');show('setup');render()}
+function finish(){stopTimer(false);state.screen='done';speak('Workout complete. Great job.');vibrate([80,60,120]);localStorage.removeItem('trainingCoachState');show('done')}
+function bind(id,fn){const el=$(id);['click','touchend'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();fn()},{passive:false}))}
+load();loadVoices();if('speechSynthesis'in window)speechSynthesis.onvoiceschanged=loadVoices;renderPlan();bind('startWorkout',()=>goToExercise(0));bind('toggleVoice',()=>{state.voice=!state.voice;if(state.voice)speak('Voice prompts are on.');render()});bind('backToSetup',()=>{stopTimer(false);show('setup');render()});bind('playPause',toggleTimer);bind('skipPhase',goToNextExercise);bind('resetWorkout',()=>reset(true));bind('restart',()=>reset(true));show(state.screen||'setup');render();
